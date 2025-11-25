@@ -15,13 +15,19 @@ http://127.0.0.1:8000/docs
 http://127.0.0.1:8000/leads
 http://127.0.0.1:8000/automation/steps
 
+Ejecución de servicio 
+uvicorn app.main:app --reload
+
+Probar llamada de un formulario 
+http://127.0.0.1:8000/demo 
+
+
+Vemos la BBDD
+sqlite3 automation_demo.db
 
 
 
 /////// Versión anterior del demo 1 
-
-
-
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -95,3 +101,6 @@ def list_leads(db: Session = Depends(get_db)):
 def list_steps(db: Session = Depends(get_db)):
     steps = db.query(AutomationStep).all()
     return steps
+
+
+

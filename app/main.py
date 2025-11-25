@@ -260,3 +260,141 @@ def demo_form():
     </html>
     """
     return HTMLResponse(content=html_content)
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Dashboard Automation</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 30px auto;
+            }
+            h1, h2 {
+                margin-bottom: 5px;
+            }
+            .card {
+                border: 1px solid #ddd;
+                padding: 15px;
+                margin-top: 15px;
+                border-radius: 4px;
+                background-color: #f9f9f9;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 6px;
+                text-align: left;
+            }
+            th {
+                background-color: #eee;
+            }
+            #lastUpdated {
+                font-size: 0.9em;
+                color: #555;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Dashboard · Automation Demo</h1>
+        <p id="lastUpdated">Última actualización: -</p>
+
+        <div class="card">
+            <h2>Resumen</h2>
+            <p><strong>Total leads:</strong> <span id="totalLeads">0</span></p>
+            <p><strong>Total eventos Ads (CAPI):</strong> <span id="totalAds">0</span></p>
+        </div>
+
+        <div class="card">
+            <h2>Leads por fuente</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fuente</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tableSource">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Leads por temperatura</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Temperatura</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tableTemp">
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            async function fetchSummary() {
+                try {
+                    const response = await fetch("/analytics/summary");
+                    const data = await response.json();
+
+                    document.getElementById("totalLeads").textContent = data.total_leads;
+                    document.getElementById("totalAds").textContent = data.total_ads_events;
+
+                    // Leads por fuente
+                    const tbodySource = document.getElementById("tableSource");
+                    tbodySource.innerHTML = "";
+                    (data.leads_by_source || []).forEach(item => {
+                        const tr = document.createElement("tr");
+                        const tdSource = document.createElement("td");
+                        const tdCount = document.createElement("td");
+                        tdSource.textContent = item.source;
+                        tdCount.textContent = item.count;
+                        tr.appendChild(tdSource);
+                        tr.appendChild(tdCount);
+                        tbodySource.appendChild(tr);
+                    });
+
+                    // Leads por temperatura
+                    const tbodyTemp = document.getElementById("tableTemp");
+                    tbodyTemp.innerHTML = "";
+                    (data.leads_by_temperature || []).forEach(item => {
+                        const tr = document.createElement("tr");
+                        const tdTemp = document.createElement("td");
+                        const tdCount = document.createElement("td");
+                        tdTemp.textContent = item.temperature;
+                        tdCount.textContent = item.count;
+                        tr.appendChild(tdTemp);
+                        tr.appendChild(tdCount);
+                        tbodyTemp.appendChild(tr);
+                    });
+
+                    const now = new Date();
+                    document.getElementById("lastUpdated").textContent =
+                        "Última actualización: " + now.toLocaleTimeString();
+                } catch (err) {
+                    console.error("Error obteniendo summary:", err);
+                }
+            }
+
+            // Primera carga
+            fetchSummary();
+            // Refrescar cada 3 segundos
+            setInterval(fetchSummary, 3000);
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
