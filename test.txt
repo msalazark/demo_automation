@@ -1,0 +1,97 @@
+Pruebas 
+curl -X POST "http://127.0.0.1:8000/webhook/lead" -H "Content-Type: application/json" -d '{"name": "Juan Perez", "email": "juan@example.com", "product_interest": "SUV_X", "source": "ads"}'
+
+en Windows PowerShell  
+Invoke-RestMethod `
+>>   -Uri "http://127.0.0.1:8000/webhook/lead" `
+>>   -Method POST `
+>>   -ContentType "application/json" `
+>>   -Body '{"name":"Juan Perez","email":"juan@example.com","product_interest":"SUV_X","source":"ads"}'
+
+
+utiles 
+http://127.0.0.1:8000/docs
+
+http://127.0.0.1:8000/leads
+http://127.0.0.1:8000/automation/steps
+
+
+
+
+/////// Versión anterior del demo 1 
+
+
+
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from datetime import datetime
+
+from .database import SessionLocal, engine, Base
+from .models import Lead, AutomationStep
+from .automation import classify_temperature, build_onboarding_flow
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Automation Demo Local")
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+class LeadIn(BaseModel):
+    name: str
+    email: str
+    product_interest: str
+    source: str  # ads, organic, referral, etc
+
+
+@app.post("/webhook/lead")
+def receive_lead(lead_in: LeadIn, db: Session = Depends(get_db)):
+    # 1. Guardar el lead
+    lead = Lead(
+        name=lead_in.name,
+        email=lead_in.email,
+        product_interest=lead_in.product_interest,
+        source=lead_in.source,
+        created_at=datetime.utcnow(),
+    )
+    db.add(lead)
+    db.commit()
+    db.refresh(lead)
+
+    # 2. Clasificar temperatura
+    lead.temperature = classify_temperature(lead)
+    db.add(lead)
+    db.commit()
+    db.refresh(lead)
+
+    # 3. Crear pasos del flujo de onboarding
+    steps = build_onboarding_flow(lead)
+    for step in steps:
+        db.add(step)
+    db.commit()
+
+    return {
+        "status": "ok",
+        "lead_id": lead.id,
+        "temperature": lead.temperature,
+        "flow_steps": len(steps),
+    }
+
+
+@app.get("/leads")
+def list_leads(db: Session = Depends(get_db)):
+    leads = db.query(Lead).all()
+    return leads
+
+
+@app.get("/automation/steps")
+def list_steps(db: Session = Depends(get_db)):
+    steps = db.query(AutomationStep).all()
+    return steps
