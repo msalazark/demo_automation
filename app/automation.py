@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from .models import Lead, AutomationStep, AdsEvent
 
+
 def classify_temperature(lead: Lead) -> str:
     # Regla de juguete: según source
     if lead.source == "ads":
@@ -8,6 +9,7 @@ def classify_temperature(lead: Lead) -> str:
     if lead.source == "organic":
         return "tibio"
     return "frio"
+
 
 
 def build_onboarding_flow(lead: Lead):
