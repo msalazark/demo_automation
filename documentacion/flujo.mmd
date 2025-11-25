@@ -1,0 +1,22 @@
+sequenceDiagram
+  participant U as Usuario
+  participant F as Pagina demo
+  participant S as Script simulador
+  participant A as App FastAPI
+  participant DB as Base de datos
+  participant R as Reporte dashboard
+
+  U->>F: Completa formulario lead
+  F->>A: POST webhook lead con datos
+
+  S->>A: POST webhook lead con datos aleatorios
+
+  A->>DB: Inserta fila en tabla leads
+  A->>DB: Crea filas en tabla automation steps
+  A->>DB: Crea fila en tabla ads events
+
+  A-->>F: Respuesta con id lead y temperatura
+
+  R->>A: GET analytics summary
+  A->>DB: Lee tablas leads y ads events
+  A-->>R: Devuelve totales y cortes por fuente y temperatura
